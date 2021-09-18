@@ -5,7 +5,7 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "bg": "FOREVER=1 forever start",
+    "bg": "FOREVER=1 forever start src/index.js",
     "watch": "NODEMON=1 nodemon"
   },
   "repository": {
