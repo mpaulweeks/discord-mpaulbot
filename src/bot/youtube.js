@@ -13,6 +13,7 @@ export class YouTubeBot {
       { command: 'list', description: 'View the current playlist', },
       { command: 'skip', description: 'Skip to the next song in the playlist', },
       { command: 'stop', description: 'Stop the entire playlist', },
+      { command: 'volume [0-100]', description: 'Set the volume for the bot', },
     ];
   }
 
@@ -31,6 +32,9 @@ export class YouTubeBot {
       return true;
     } else if (message.content.startsWith(`${prefix}stop`)) {
       this.stop(message, serverQueue);
+      return true;
+    } else if (message.content.startsWith(`${prefix}volume`)) {
+      this.volume(message, serverQueue);
       return true;
     }
   };
@@ -69,8 +73,8 @@ export class YouTubeBot {
         voiceChannel: voiceChannel,
         connection: null,
         songs: [],
-        volume: 5,
-        playing: true
+        volume: 50,
+        playing: true,
       };
 
       queue.set(message.guild.id, queueContruct);
@@ -78,7 +82,7 @@ export class YouTubeBot {
       queueContruct.songs.push(song);
 
       try {
-        var connection = await voiceChannel.join();
+        const connection = await voiceChannel.join();
         queueContruct.connection = connection;
         this.play(message.guild, queueContruct.songs[0]);
       } catch (err) {
@@ -133,7 +137,7 @@ export class YouTubeBot {
         this.play(guild, serverQueue.songs[0]);
       })
       .on("error", error => console.error(error));
-    dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+    dispatcher.setVolumeLogarithmic(serverQueue.volume / 100);
     serverQueue.textChannel.send(`Start playing: **${song.title}**`);
   }
 
@@ -143,8 +147,34 @@ export class YouTubeBot {
       return;
     }
     serverQueue.textChannel.send(`
-Here is the current playlist:
+Here is the current playlist (Volume: ${serverQueue.volume}%)
 ${serverQueue.songs.map((song, i) => `(${BotUtil.secondsToDisplay(song.lengthSeconds)}) ${song.title}`).join('\n')}
     `.trim());
+  }
+
+  volume(message, serverQueue) {
+    if (!message.member.voice.channel) {
+      return message.channel.send(
+        "You have to be in a voice channel to adjust the volume!"
+      );
+    }
+    if (!serverQueue) {
+      return message.channel.send("You can only adjust volume while music is playing");
+    }
+
+    const args = message.content.split(" ");
+    const volumeArg = args[1];
+    const newVolume = parseFloat(volumeArg ?? '');
+    if (isNaN(newVolume) || newVolume < 0 || newVolume > 100) {
+      return message.channel.send(
+        "To change the volume, you need to pass in a number between 0 and 100"
+      );
+    }
+
+    serverQueue.volume = Math.floor(newVolume);
+    serverQueue.connection.dispatcher.setVolumeLogarithmic(serverQueue.volume / 100);
+    return message.channel.send(
+      `Volume has been set to ${serverQueue.volume}%`
+    );
   }
 }
