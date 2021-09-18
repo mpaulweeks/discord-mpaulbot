@@ -1,5 +1,6 @@
 import Discord from "discord.js";
 import fs from "fs";
+import { StatusBot } from "./status.js";
 import { YouTubeBot } from "./youtube.js";
 
 export class MainBot {
@@ -8,20 +9,18 @@ export class MainBot {
     this.prefix = prefix;
 
     const client = new Discord.Client();
-
-    const youtube = new YouTubeBot(prefix);
-
     client.once("ready", () => {
       console.log("Ready!");
     });
-
     client.once("reconnecting", () => {
       console.log("Reconnecting!");
     });
-
     client.once("disconnect", () => {
       console.log("Disconnect!");
     });
+
+    const youtube = new YouTubeBot(prefix);
+    const status = new StatusBot(prefix);
 
     client.on("message", async message => {
       if (message.author.bot) return;
@@ -29,12 +28,14 @@ export class MainBot {
 
       // sub-bots
       if (youtube.onMessage(message)) { return; }
+      if (status.onMessage(message)) { return; }
 
       // else
       const commands = [
         ...this.getCommands(),
         ...youtube.getCommands(),
-      ]
+        ...status.getCommands(),
+      ];
       message.channel.send(`
 Here are all the commands that mpaulbot supports:
 
