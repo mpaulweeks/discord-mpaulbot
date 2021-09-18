@@ -40,10 +40,26 @@ export class YouTubeBot {
     }
   };
 
+  async parseSongs(message, songArgs) {
+    const songs = [];
+    for (let i = 0; i < songArgs.length; i++) {
+      const ytid = songArgs[i];
+      try {
+        const songInfo = await ytdl.getInfo(ytid);
+        songs.push({
+          title: songInfo.videoDetails.title,
+          url: songInfo.videoDetails.video_url,
+          lengthSeconds: songInfo.videoDetails.lengthSeconds,
+        });
+      } catch (err) {
+        message.channel.send(`${ytid} was not found`);
+      }
+    }
+    return songs;
+  }
+
   async execute(message, serverQueue) {
     const { queue } = this;
-    const args = message.content.split(" ");
-    const url = args[2];
 
     const voiceChannel = message.member.voice.channel;
     if (!voiceChannel)
@@ -57,44 +73,44 @@ export class YouTubeBot {
       );
     }
 
-    let songInfo;
-    try {
-      songInfo = await ytdl.getInfo(url);
-    } catch (err) {
-      return message.channel.send(`${url} was not found. Please enter a valid YouTube url`);
+    const songArgs = message.content.split(" ").slice(2);
+    const songs = await this.parseSongs(message, songArgs);
+    if (songs.length === 0) {
+      return message.channel.send(
+        "Please type a valid YouTube id/url after the play command"
+      );
     }
-    const song = {
-      title: songInfo.videoDetails.title,
-      url: songInfo.videoDetails.video_url,
-      lengthSeconds: songInfo.videoDetails.lengthSeconds,
-    };
 
     if (!serverQueue) {
       const queueContruct = {
         textChannel: message.channel,
         voiceChannel: voiceChannel,
         connection: null,
-        songs: [],
+        songs,
         volume: 50,
         playing: true,
       };
 
       queue.set(message.guild.id, queueContruct);
 
-      queueContruct.songs.push(song);
-
       try {
         const connection = await voiceChannel.join();
         queueContruct.connection = connection;
-        this.play(message.guild, queueContruct.songs[0]);
+        this.playSong(message.guild, queueContruct.songs[0]);
+        songs.slice(1).forEach(song => {
+          message.channel.send(`${song.title} has been added to the queue!`);
+        });
       } catch (err) {
         console.log(err);
         queue.delete(message.guild.id);
         return message.channel.send(err);
       }
     } else {
-      serverQueue.songs.push(song);
-      return message.channel.send(`${song.title} has been added to the queue!`);
+      serverQueue.songs.push(...songs);
+      songs.forEach(song => {
+        message.channel.send(`${song.title} has been added to the queue!`);
+      });
+      return
     }
   }
 
@@ -123,7 +139,7 @@ export class YouTubeBot {
     serverQueue.connection.dispatcher.end();
   }
 
-  play(guild, song) {
+  playSong(guild, song) {
     const { queue } = this;
     const serverQueue = queue.get(guild.id);
     if (!song) {
@@ -136,7 +152,7 @@ export class YouTubeBot {
       .play(ytdl(song.url))
       .on("finish", () => {
         serverQueue.songs.shift();
-        this.play(guild, serverQueue.songs[0]);
+        this.playSong(guild, serverQueue.songs[0]);
       })
       .on("error", error => console.error(error));
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 100);
