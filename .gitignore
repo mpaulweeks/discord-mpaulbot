@@ -1,3 +1,6 @@
+# Discord Bot
+config/prod.json
+
 # Logs
 logs
 *.log

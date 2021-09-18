@@ -1,0 +1,29 @@
+{
+  "name": "discord-mpaulbot",
+  "version": "1.0.0",
+  "description": "Discord bot full of mpaul functions",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "watch": "nodemon"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mpaulweeks/discord-mpaulbot.git"
+  },
+  "author": "mpaulweeks",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mpaulweeks/discord-mpaulbot/issues"
+  },
+  "homepage": "https://github.com/mpaulweeks/discord-mpaulbot#readme",
+  "dependencies": {
+    "@discordjs/opus": "^0.5.3",
+    "discord.js": "^12.5.3",
+    "ffmpeg": "^0.0.4",
+    "fluent-ffmpeg": "^2.1.2",
+    "fs": "^0.0.1-security",
+    "nodemon": "^2.0.12",
+    "ytdl-core": "^4.9.1"
+  }
+}
