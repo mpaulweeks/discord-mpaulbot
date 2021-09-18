@@ -1,9 +1,19 @@
 import ytdl from "ytdl-core";
+import { BotUtil } from "./util.js";
 
 export class YouTubeBot {
   queue = new Map();
   constructor(prefix) {
     this.prefix = prefix;
+  }
+
+  getCommands() {
+    return [
+      { command: 'play [YouTube url]', description: 'Add a song to the playlist', },
+      { command: 'list', description: 'View the current playlist', },
+      { command: 'skip', description: 'Skip to the next song in the playlist', },
+      { command: 'stop', description: 'Stop the entire playlist', },
+    ];
   }
 
   onMessage(message) {
@@ -12,6 +22,9 @@ export class YouTubeBot {
 
     if (message.content.startsWith(`${prefix}play`)) {
       this.execute(message, serverQueue);
+      return true;
+    } else if (message.content.startsWith(`${prefix}list`)) {
+      this.list(message, serverQueue);
       return true;
     } else if (message.content.startsWith(`${prefix}skip`)) {
       this.skip(message, serverQueue);
@@ -47,6 +60,7 @@ export class YouTubeBot {
     const song = {
       title: songInfo.videoDetails.title,
       url: songInfo.videoDetails.video_url,
+      lengthSeconds: songInfo.videoDetails.lengthSeconds,
     };
 
     if (!serverQueue) {
@@ -79,24 +93,26 @@ export class YouTubeBot {
   }
 
   skip(message, serverQueue) {
-    if (!message.member.voice.channel)
+    if (!message.member.voice.channel) {
       return message.channel.send(
         "You have to be in a voice channel to stop the music!"
       );
-    if (!serverQueue)
+    }
+    if (!serverQueue) {
       return message.channel.send("There is no song that I could skip!");
+    }
     serverQueue.connection.dispatcher.end();
   }
 
   stop(message, serverQueue) {
-    if (!message.member.voice.channel)
+    if (!message.member.voice.channel) {
       return message.channel.send(
         "You have to be in a voice channel to stop the music!"
       );
-
-    if (!serverQueue)
+    }
+    if (!serverQueue) {
       return message.channel.send("There is no song that I could stop!");
-
+    }
     serverQueue.songs = [];
     serverQueue.connection.dispatcher.end();
   }
@@ -119,5 +135,16 @@ export class YouTubeBot {
       .on("error", error => console.error(error));
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
     serverQueue.textChannel.send(`Start playing: **${song.title}**`);
+  }
+
+  list(message, serverQueue) {
+    if (!serverQueue || serverQueue.songs.length === 0) {
+      message.channel.send(`The playlist is currently empty`);
+      return;
+    }
+    serverQueue.textChannel.send(`
+Here is the current playlist:
+${serverQueue.songs.map((song, i) => `(${BotUtil.secondsToDisplay(song.lengthSeconds)}) ${song.title}`).join('\n')}
+    `.trim());
   }
 }

@@ -25,6 +25,20 @@ export class MainBot {
     client.on("message", async message => {
       if (message.author.bot) return;
       if (!message.content.startsWith(prefix)) return;
+
+      if (message.content.startsWith(`${prefix}mpaulbot`)) {
+        const commands = [
+          ...this.getCommands(),
+          ...youtube.getCommands(),
+        ]
+        message.channel.send(`
+Here are all the commands that mpaulbot supports:
+
+${commands.map(cmd => `**${prefix}${cmd.command}** ${cmd.description}`).join('\n')}
+        `.trim());
+        return;
+      }
+
       if (youtube.onMessage(message)) { return; }
 
       // else
@@ -32,5 +46,11 @@ export class MainBot {
     });
 
     client.login(token);
+  }
+
+  getCommands() {
+    return [
+      { command: 'mpaulbot', description: 'See this command list', },
+    ];
   }
 }
