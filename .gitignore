@@ -1,5 +1,6 @@
 # Discord Bot
 config/prod.json
+package-lock.json
 
 # Logs
 logs
