@@ -5,6 +5,7 @@ import { YouTubeBot } from "./youtube.js";
 export class MainBot {
   constructor() {
     const { prefix, token } = JSON.parse(fs.readFileSync('config/prod.json'));
+    this.prefix = prefix;
 
     const client = new Discord.Client();
 
@@ -26,31 +27,28 @@ export class MainBot {
       if (message.author.bot) return;
       if (!message.content.startsWith(prefix)) return;
 
-      if (message.content.startsWith(`${prefix}mpaulbot`)) {
-        const commands = [
-          ...this.getCommands(),
-          ...youtube.getCommands(),
-        ]
-        message.channel.send(`
-Here are all the commands that mpaulbot supports:
-
-${commands.map(cmd => `**${prefix}${cmd.command}** ${cmd.description}`).join('\n')}
-        `.trim());
-        return;
-      }
-
+      // sub-bots
       if (youtube.onMessage(message)) { return; }
 
       // else
-      message.channel.send("You need to enter a valid command!");
+      const commands = [
+        ...this.getCommands(),
+        ...youtube.getCommands(),
+      ]
+      message.channel.send(`
+Here are all the commands that mpaulbot supports:
+
+${commands.map(cmd => `**${cmd.command}** ${cmd.description}`).join('\n')}
+        `.trim());
     });
 
     client.login(token);
   }
 
   getCommands() {
+    const { prefix } = this;
     return [
-      { command: 'mpaulbot', description: 'See this command list', },
+      { command: `${prefix}`, description: 'See this command list', },
     ];
   }
 }

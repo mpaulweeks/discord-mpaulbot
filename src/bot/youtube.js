@@ -8,12 +8,13 @@ export class YouTubeBot {
   }
 
   getCommands() {
+    const { prefix } = this;
     return [
-      { command: 'play [YouTube url]', description: 'Add a song to the playlist', },
-      { command: 'list', description: 'View the current playlist', },
-      { command: 'skip', description: 'Skip to the next song in the playlist', },
-      { command: 'stop', description: 'Stop the entire playlist', },
-      { command: 'volume [0-100]', description: 'Set the volume for the bot', },
+      { command: `${prefix} play [YouTube url]`, description: 'Add a song to the playlist', },
+      { command: `${prefix} list`, description: 'View the current playlist', },
+      { command: `${prefix} skip`, description: 'Skip to the next song in the playlist', },
+      { command: `${prefix} stop`, description: 'Stop the entire playlist', },
+      { command: `${prefix} volume [0-100]`, description: 'Set the volume for the bot', },
     ];
   }
 
@@ -21,19 +22,19 @@ export class YouTubeBot {
     const { prefix, queue } = this;
     const serverQueue = queue.get(message.guild.id);
 
-    if (message.content.startsWith(`${prefix}play`)) {
+    if (message.content.startsWith(`${prefix} play`)) {
       this.execute(message, serverQueue);
       return true;
-    } else if (message.content.startsWith(`${prefix}list`)) {
+    } else if (message.content.startsWith(`${prefix} list`)) {
       this.list(message, serverQueue);
       return true;
-    } else if (message.content.startsWith(`${prefix}skip`)) {
+    } else if (message.content.startsWith(`${prefix} skip`)) {
       this.skip(message, serverQueue);
       return true;
-    } else if (message.content.startsWith(`${prefix}stop`)) {
+    } else if (message.content.startsWith(`${prefix} stop`)) {
       this.stop(message, serverQueue);
       return true;
-    } else if (message.content.startsWith(`${prefix}volume`)) {
+    } else if (message.content.startsWith(`${prefix} volume`)) {
       this.volume(message, serverQueue);
       return true;
     }
@@ -42,6 +43,7 @@ export class YouTubeBot {
   async execute(message, serverQueue) {
     const { queue } = this;
     const args = message.content.split(" ");
+    const url = args[2];
 
     const voiceChannel = message.member.voice.channel;
     if (!voiceChannel)
@@ -57,9 +59,9 @@ export class YouTubeBot {
 
     let songInfo;
     try {
-      songInfo = await ytdl.getInfo(args[1]);
+      songInfo = await ytdl.getInfo(url);
     } catch (err) {
-      return message.channel.send(`${args[1]} was not found. Please enter a valid YouTube url`);
+      return message.channel.send(`${url} was not found. Please enter a valid YouTube url`);
     }
     const song = {
       title: songInfo.videoDetails.title,
@@ -163,11 +165,11 @@ ${serverQueue.songs.map((song, i) => `(${BotUtil.secondsToDisplay(song.lengthSec
     }
 
     const args = message.content.split(" ");
-    const volumeArg = args[1];
+    const volumeArg = args[2];
     const newVolume = parseFloat(volumeArg ?? '');
     if (isNaN(newVolume) || newVolume < 0 || newVolume > 100) {
       return message.channel.send(
-        "To change the volume, you need to pass in a number between 0 and 100"
+        `The current volume is ${serverQueue.volume}%. To change the volume, you need to pass in a number between 0 and 100`
       );
     }
 
